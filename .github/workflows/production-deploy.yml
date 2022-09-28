@@ -1,0 +1,56 @@
+name: Deploy Image to Container
+
+on:
+  push:
+    branches:
+      - "main"
+
+env:
+  CONTAINER_NAME: startercontainer
+  SSH_USER: root
+  SSH_HOST: server.app.chrisbrocklesby.com
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Remote SSH Connection
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ env.SSH_PRIVATE_KEY }}" > ~/.ssh/remote.key
+          chmod 600 ~/.ssh/remote.key
+          cat >> ~/.ssh/config <<END
+          Host remote
+            HostName ${{ env.SSH_HOST }}
+            User ${{ env.SSH_USER }}
+            IdentityFile ~/.ssh/remote.key
+            StrictHostKeyChecking no
+          END
+
+      - name: Build & copy image to remote host
+        run: |
+          docker build . --tag ${{ env.CONTAINER_NAME }}:latest
+          docker save ${{ env.CONTAINER_NAME }}:latest | gzip | DOCKER_HOST=ssh://remote docker load
+
+      - name: Create .env file
+        run: echo "${{ secrets.ENV_FILE }}" >> .env
+
+      - name: Deploy container image
+        run: |
+          export DOCKER_HOST="ssh://remote"
+          docker rm -f ${{ env.CONTAINER_NAME }}
+
+          docker run -d \
+            --restart unless-stopped \
+            --network host \
+            --env-file .env \
+            --volume caddy_data:/data \
+            --volume caddy_config:/config \
+            --name ${{ env.CONTAINER_NAME }} ${{ env.CONTAINER_NAME }}:latest
+
+          docker image prune -f
+          rm -rf .env
