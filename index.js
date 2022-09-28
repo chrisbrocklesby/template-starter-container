@@ -6,6 +6,6 @@ http.createServer((request, response) => {
     { "Content-Type": "text/plain" },
   );
   response.end(
-    `Welcome to your containerized Node.js app!\n ${process.env.HELLO}`,
+    `Welcome to your containerized Node.js app ${process.env.HELLO}`,
   );
-}).listen(process.env.PORT || 3000);
+}).listen(3000);
