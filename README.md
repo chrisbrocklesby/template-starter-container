@@ -2,7 +2,7 @@
 
 Quick starter template for a NodeJS container.
 
-## Usage
+## Run Docker Container
 
 ```bash
 docker run -d \
