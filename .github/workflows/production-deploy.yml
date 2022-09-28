@@ -6,10 +6,10 @@ on:
       - "main"
 
 env:
-  CONTAINER_NAME: startercontainer
+  CONTAINER_NAME: template-starter-container
+  CONTAINER_PORT: 3000:3000
   SSH_USER: root
   SSH_HOST: server.app.chrisbrocklesby.com
-  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
 jobs:
   build:
@@ -21,7 +21,7 @@ jobs:
       - name: Setup Remote SSH Connection
         run: |
           mkdir -p ~/.ssh/
-          echo "${{ env.SSH_PRIVATE_KEY }}" > ~/.ssh/remote.key
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/remote.key
           chmod 600 ~/.ssh/remote.key
           cat >> ~/.ssh/config <<END
           Host remote
@@ -46,10 +46,8 @@ jobs:
 
           docker run -d \
             --restart unless-stopped \
-            --network host \
+            --publish ${{ env.CONTAINER_PORT }}\
             --env-file .env \
-            --volume caddy_data:/data \
-            --volume caddy_config:/config \
             --name ${{ env.CONTAINER_NAME }} ${{ env.CONTAINER_NAME }}:latest
 
           docker image prune -f
