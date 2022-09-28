@@ -5,5 +5,5 @@ RUN npm install
 RUN npm ci --omit=dev
 COPY . .
 
-EXPOSE 3003
+EXPOSE 3000
 CMD [ "node", "index.js" ]
